@@ -106,61 +106,59 @@ export default function App() {
     function moveNoButton() {
       if (!container || !noBtn) return;
 
-      // Get the parent container (the div with relative positioning)
-      const parentContainer = noBtn.parentElement;
-      if (!parentContainer) return;
-
-      // Get bounds
-      const parentRect = parentContainer.getBoundingClientRect();
-      const btnRect = noBtn.getBoundingClientRect();
-      const containerRect = container.getBoundingClientRect();
-
-      // Calculate movement area - allow button to move around more freely
-      // Use viewport or container bounds for dramatic movement
-      const padding = 30;
-      const movementRangeX = 400; // horizontal movement range
-      const movementRangeY = 300; // vertical movement range
-
-      // Generate random offset from current position
-      const offsetX = (Math.random() - 0.5) * movementRangeX;
-      const offsetY = (Math.random() - 0.5) * movementRangeY;
-
       // Get current position
       const currentX = gsap.getProperty(noBtn, "x") || 0;
       const currentY = gsap.getProperty(noBtn, "y") || 0;
 
-      // Calculate new position
-      const targetX = currentX + offsetX;
-      const targetY = currentY + offsetY;
+      // Move left or right by 250px (randomly choose direction)
+      const directionX = Math.random() < 0.5 ? -1 : 1;
+      const targetX = currentX + directionX * 250;
 
-      // Add some rotation and scale for more playful effect
-      const rotation = (Math.random() - 0.5) * 20; // -10 to 10 degrees
-      const scale = 0.9 + Math.random() * 0.2; // 0.9 to 1.1
+      // Move up or down by 200px (randomly choose direction)
+      const directionY = Math.random() < 0.5 ? -1 : 1;
+      const targetY = currentY + directionY * 200;
 
+      // Get bounds to constrain movement
+      const parentContainer = noBtn.parentElement;
+      if (!parentContainer) return;
+
+      const parentRect = parentContainer.getBoundingClientRect();
+      const btnRect = noBtn.getBoundingClientRect();
+      const viewportWidth = window.innerWidth;
+      const viewportHeight = window.innerHeight;
+      const padding = 25;
+
+      // Constrain to viewport bounds
+      const minX = -parentRect.left + padding;
+      const maxX = viewportWidth - parentRect.right - padding;
+      const constrainedX = Math.max(minX, Math.min(maxX, targetX));
+
+      const minY = -parentRect.top + padding;
+      const maxY = viewportHeight - parentRect.bottom - padding;
+      const constrainedY = Math.max(minY, Math.min(maxY, targetY));
+
+      // Animate the movement
       gsap.to(noBtn, {
-        x: targetX,
-        y: targetY,
-        rotation: rotation,
-        scale: scale,
-        duration: 0.35,
+        x: constrainedX,
+        y: constrainedY,
+        duration: 0.3,
         ease: "power2.out",
       });
     }
 
-    // When hovering, make the button wander around continuously
-    let wanderInterval = null;
+    // When hovering, make the button move left/right
+    let isWandering = false;
+
     function startWandering() {
-      // run immediate move
+      if (isWandering) return;
+      isWandering = true;
+
+      // Move once when hovered/clicked
       moveNoButton();
-      // then repeat while hovered - faster movement
-      if (wanderInterval) clearInterval(wanderInterval);
-      wanderInterval = setInterval(() => moveNoButton(), 300);
     }
+
     function stopWandering() {
-      if (wanderInterval) {
-        clearInterval(wanderInterval);
-        wanderInterval = null;
-      }
+      isWandering = false;
       // Reset rotation and scale when not hovering
       if (noBtn) {
         gsap.to(noBtn, {
@@ -175,26 +173,56 @@ export default function App() {
     function handleEnter() {
       startWandering();
     }
+
     function handleLeave() {
       stopWandering();
     }
 
+    // Enhanced touch handler for mobile devices
+    let touchStartTime = 0;
+    let touchMoved = false;
+
+    const touchStartHandler = (e) => {
+      touchStartTime = Date.now();
+      touchMoved = false;
+      e.preventDefault();
+      startWandering();
+    };
+
+    const touchMoveHandler = (e) => {
+      touchMoved = true;
+    };
+
+    const touchEndHandler = (e) => {
+      const touchDuration = Date.now() - touchStartTime;
+      // If it was a quick tap and didn't move much, stop wandering quickly
+      // Otherwise, let it wander for a bit longer
+      const delay = touchMoved || touchDuration > 300 ? 1200 : 600;
+      setTimeout(() => {
+        stopWandering();
+      }, delay);
+    };
+
     // for desktop pointer events
     noBtn.addEventListener("mouseenter", handleEnter);
     noBtn.addEventListener("mouseleave", handleLeave);
-    // for touch devices: when user touches the button start wandering and stop after short delay
-    const touchHandler = (e) => {
-      e.preventDefault();
-      startWandering();
-      setTimeout(stopWandering, 800);
-    };
-    noBtn.addEventListener("touchstart", touchHandler, { passive: false });
+    noBtn.addEventListener("click", moveNoButton);
+
+    // Enhanced touch handling for mobile devices
+    noBtn.addEventListener("touchstart", touchStartHandler, { passive: false });
+    noBtn.addEventListener("touchmove", touchMoveHandler, { passive: true });
+    noBtn.addEventListener("touchend", touchEndHandler, { passive: true });
+    noBtn.addEventListener("touchcancel", stopWandering, { passive: true });
 
     return () => {
       stopWandering();
       noBtn.removeEventListener("mouseenter", handleEnter);
       noBtn.removeEventListener("mouseleave", handleLeave);
-      noBtn.removeEventListener("touchstart", touchHandler);
+      noBtn.removeEventListener("click", moveNoButton);
+      noBtn.removeEventListener("touchstart", touchStartHandler);
+      noBtn.removeEventListener("touchmove", touchMoveHandler);
+      noBtn.removeEventListener("touchend", touchEndHandler);
+      noBtn.removeEventListener("touchcancel", stopWandering);
       ctx.revert();
     };
   }, []);
@@ -215,22 +243,37 @@ export default function App() {
       });
     }
 
-    // animate form into presence
+    // Animate form into presence with sophisticated timeline
     requestAnimationFrame(() => {
       if (!formRef.current) return;
-      gsap.fromTo(
-        formRef.current,
-        { y: 40, autoAlpha: 0, scale: 0.98 },
-        { y: 0, autoAlpha: 1, scale: 1, duration: 0.6, ease: "expo.out" }
-      );
-      // micro animation for fields
-      gsap.from(".form-field", {
-        y: 18,
-        autoAlpha: 0,
-        duration: 0.5,
-        stagger: 0.08,
-        delay: 0.1,
-      });
+      const formTl = gsap.timeline();
+
+      formTl
+        .fromTo(
+          formRef.current,
+          { y: 50, autoAlpha: 0, scale: 0.95, rotationX: -10 },
+          {
+            y: 0,
+            autoAlpha: 1,
+            scale: 1,
+            rotationX: 0,
+            duration: 0.8,
+            ease: "expo.out",
+          }
+        )
+        // Animate form fields with stagger
+        .from(
+          ".form-field",
+          {
+            y: 25,
+            autoAlpha: 0,
+            scale: 0.96,
+            duration: 0.6,
+            stagger: 0.1,
+            ease: "power2.out",
+          },
+          "-=0.4"
+        );
     });
   }
 
@@ -264,58 +307,56 @@ export default function App() {
   return (
     <div
       ref={containerRef}
-      className="min-h-screen flex items-center justify-center bg-gradient-to-b from-gray-900 via-neutral-900 to-black p-8"
+      className="min-h-screen flex items-center justify-center bg-gradient-to-b from-gray-900 via-neutral-900 to-black p-3 xs:p-4 sm:p-6 md:p-8 overflow-x-hidden"
     >
-      <div className="relative w-full max-w-4xl">
+      <div className="relative w-full max-w-4xl mx-auto px-2 sm:px-0">
         {/* Background hero glass card */}
         <div className="pointer-events-none absolute inset-0 -z-10 overflow-hidden">
           <div
             ref={bgGradientRef}
-            className="absolute left-1/4 top-10 w-[700px] h-[700px] rounded-full opacity-10 blur-3xl bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 transform rotate-12"
+            className="absolute left-1/4 top-10 w-[400px] h-[400px] xs:w-[500px] xs:h-[500px] sm:w-[600px] sm:h-[600px] md:w-[700px] md:h-[700px] rounded-full opacity-10 blur-3xl bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 transform rotate-12"
           ></div>
         </div>
 
         <div
           ref={mainCardRef}
-          className="backdrop-blur-sm bg-white/4 border border-white/6 rounded-3xl p-12 md:p-16 shadow-2xl"
+          className="backdrop-blur-sm bg-white/4 border border-white/6 rounded-xl xs:rounded-2xl sm:rounded-3xl p-4 xs:p-6 sm:p-8 md:p-12 lg:p-16 shadow-2xl w-full"
         >
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-8">
-            <div className="flex-1">
-              <h1 className="hero-title text-4xl md:text-5xl font-extrabold leading-tight text-white font-hbue">
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6 sm:gap-8">
+            <div className="flex-1 min-w-0">
+              <h1 className="hero-title text-6xl xs:text-5xl sm:text-6xl md:text-6xl lg:text-5xl font-extrabold leading-[1.1] text-white font-hbue break-words">
                 Ready to build something exceptional?
               </h1>
               <p
                 ref={subtitleRef}
-                className="mt-4 text-lg text-gray-300 max-w-xl font-founders tracking-wide"
+                className="mt-3 xs:mt-4 text-lg xs:text-base sm:text-lg text-gray-300 max-w-xl font-founders tracking-wide leading-relaxed"
               >
                 Join our studio — we design elegant products with measurable
                 outcomes. Tell us a little about you and we'll reach out.
               </p>
 
-              <div className="mt-8 cta-row flex gap-4 items-center">
+              <div className="mt-5 xs:mt-6 sm:mt-8 cta-row flex flex-row items-center gap-2">
                 <button
                   ref={yesBtnRef}
                   onClick={handleYesClick}
-                  className="yes-btn relative z-10 inline-flex items-center gap-3 rounded-full px-6 py-3 bg-white text-gray-900 font-semibold shadow-lg hover:scale-1.02 focus:outline-none focus:ring-4 ring-white/20 transition-transform"
+                  className="yes-btn relative z-10 flex items-center justify-center rounded-full w-32 sm:w-36 h-10 xs:h-11 text-xs xs:text-sm sm:text-sm bg-white text-gray-900 font-semibold shadow-lg hover:scale-[1.02] active:scale-[0.98] focus:outline-none focus:ring-4 ring-white/20 transition-transform whitespace-nowrap flex-shrink-0"
                 >
                   Yes, let's talk
                 </button>
 
-                <div className="relative inline-block w-40 h-12 overflow-visible">
-                  {/* No button is positioned absolutely and moved by GSAP (transform translate). */}
-                  <button
-                    ref={noBtnRef}
-                    onClick={(e) => e.preventDefault()}
-                    className="no-btn absolute left-0 top-0 inline-flex items-center justify-center w-full h-full rounded-full border border-white/10 text-white text-sm font-medium bg-transparent backdrop-blur-sm hover:cursor-pointer shadow-md z-20"
-                  >
-                    No
-                  </button>
-                </div>
+                {/* Keep No button in normal flow; GSAP uses translate so layout stays aligned */}
+                <button
+                  ref={noBtnRef}
+                  onClick={(e) => e.preventDefault()}
+                  className="no-btn relative flex items-center justify-center w-32 sm:w-36 h-10 xs:h-11 rounded-full border border-white/10 text-white text-xs xs:text-sm font-medium bg-transparent backdrop-blur-sm hover:cursor-pointer active:cursor-pointer shadow-md z-0 touch-manipulation flex-shrink-0"
+                >
+                  No
+                </button>
               </div>
             </div>
 
             {/* Right column: animated form appears here */}
-            <div className="flex-1 flex items-center justify-center">
+            <div className="flex-1 flex items-center justify-center mt-6 lg:mt-0 lg:pl-8">
               <div
                 ref={formRef}
                 className={`w-full max-w-md transition-all ${
@@ -324,40 +365,50 @@ export default function App() {
               >
                 <form
                   onSubmit={handleSubmit}
-                  className="space-y-4 bg-white/6 border border-white/6 p-6 rounded-2xl shadow-xl"
+                  className="space-y-4 bg-white/6 border border-white/6 p-4 xs:p-5 sm:p-6 rounded-xl sm:rounded-2xl shadow-xl w-full"
                 >
                   <div className="form-field">
-                    <label className="block text-sm text-gray-200">Name</label>
+                    <label className="block text-sm text-gray-200 mb-1">
+                      Name
+                    </label>
                     <input
                       name="name"
                       required
-                      className="mt-1 w-full rounded-lg px-4 py-3 bg-white/5 border border-white/8 focus:outline-none focus:ring-2 focus:ring-indigo-400"
+                      className="w-full rounded-lg px-3 xs:px-4 py-2 xs:py-2.5 sm:py-3 text-base bg-white/5 border border-white/8 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-400 transition-all"
+                      placeholder="Your name"
                     />
                   </div>
 
                   <div className="form-field">
-                    <label className="block text-sm text-gray-200">Email</label>
+                    <label className="block text-sm text-gray-200 mb-1">
+                      Email
+                    </label>
                     <input
                       name="email"
                       type="email"
                       required
-                      className="mt-1 w-full rounded-lg px-4 py-3 bg-white/5 border border-white/8 focus:outline-none focus:ring-2 focus:ring-indigo-400"
+                      className="w-full rounded-lg px-3 xs:px-4 py-2 xs:py-2.5 sm:py-3 text-base bg-white/5 border border-white/8 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-400 transition-all"
+                      placeholder="your@email.com"
                     />
                   </div>
 
                   <div className="form-field">
-                    <label className="block text-sm text-gray-200">Phone</label>
+                    <label className="block text-sm text-gray-200 mb-1">
+                      Phone
+                    </label>
                     <input
                       name="phone"
+                      type="tel"
                       inputMode="tel"
-                      className="mt-1 w-full rounded-lg px-4 py-3 bg-white/5 border border-white/8 focus:outline-none focus:ring-2 focus:ring-indigo-400"
+                      className="w-full rounded-lg px-3 xs:px-4 py-2 xs:py-2.5 sm:py-3 text-base bg-white/5 border border-white/8 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-400 transition-all"
+                      placeholder="(555) 000-0000"
                     />
                   </div>
 
-                  <div className="form-field">
+                  <div className="form-field pt-1">
                     <button
                       type="submit"
-                      className="submit-btn w-full rounded-full py-3 font-semibold bg-gradient-to-r from-indigo-500 to-pink-500 text-white shadow-lg"
+                      className="submit-btn w-full rounded-full py-2.5 xs:py-3 sm:py-3 text-sm sm:text-base font-semibold bg-gradient-to-r from-indigo-500 to-pink-500 text-white shadow-lg active:scale-[0.98] transition-transform"
                     >
                       Notify me
                     </button>
@@ -368,7 +419,10 @@ export default function App() {
           </div>
 
           {/* subtle footer */}
-          <div className="mt-8 text-xs text-gray-400">
+          <div
+            ref={footerRef}
+            className="mt-5 xs:mt-6 sm:mt-8 text-xs text-gray-400 text-center sm:text-left"
+          >
             No spam. We respect your privacy.
           </div>
         </div>
@@ -378,8 +432,41 @@ export default function App() {
       <style>{`
         /* Slight glass card highlight */
         .backdrop-blur-sm { backdrop-filter: blur(8px); }
-        .no-btn { transition: transform 120ms linear; }
+        .no-btn { 
+          transition: transform 120ms linear;
+          -webkit-tap-highlight-color: transparent;
+          user-select: none;
+        }
         .yes-btn:active { transform: translateY(1px); }
+        .touch-manipulation {
+          touch-action: manipulation;
+          -webkit-touch-callout: none;
+        }
+        input::placeholder {
+          color: rgba(156, 163, 175, 0.5);
+        }
+        input:focus::placeholder {
+          color: rgba(156, 163, 175, 0.3);
+        }
+        /* Improve form input appearance on mobile */
+        @media (max-width: 640px) {
+          input {
+            font-size: 16px; /* Prevents zoom on iOS */
+          }
+        }
+        /* Prevent horizontal overflow */
+        * {
+          max-width: 100%;
+        }
+        /* Better text wrapping */
+        h1, p {
+          word-wrap: break-word;
+          overflow-wrap: break-word;
+        }
+        /* Ensure buttons don't shrink too much */
+        button {
+          flex-shrink: 0;
+        }
       `}</style>
     </div>
   );
