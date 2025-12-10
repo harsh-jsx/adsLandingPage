@@ -324,22 +324,22 @@ export default function App() {
         >
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6 sm:gap-8">
             <div className="flex-1 min-w-0">
-              <h1 className="hero-title text-6xl xs:text-5xl sm:text-6xl md:text-6xl lg:text-5xl font-extrabold leading-[1.1] text-white font-hbue break-words">
+              <h1 className="hero-title text-6xl xs:text-5xl sm:text-6xl md:text-6xl lg:text-7xl font-extrabold leading-[1.1] text-white font-hbue break-words">
                 Ready to build something exceptional?
               </h1>
               <p
                 ref={subtitleRef}
-                className="mt-3 xs:mt-4 text-lg xs:text-base sm:text-lg text-gray-300 max-w-xl font-founders tracking-wide leading-relaxed"
+                className="mt-3 xs:mt-4 text-lg xs:text-lg sm:text-lg lg:text-xl text-gray-300 max-w-xl font-founders tracking-wide leading-relaxed"
               >
                 Join our studio — we design elegant products with measurable
                 outcomes. Tell us a little about you and we'll reach out.
               </p>
 
-              <div className="mt-5 xs:mt-6 sm:mt-8 cta-row flex flex-row items-center gap-2">
+              <div className="mt-5 xs:mt-6 sm:mt-8  cta-row flex flex-row items-center gap-2">
                 <button
                   ref={yesBtnRef}
                   onClick={handleYesClick}
-                  className="yes-btn relative z-10 flex items-center justify-center rounded-full w-32 sm:w-36 h-10 xs:h-11 text-xs xs:text-sm sm:text-sm bg-white text-gray-900 font-semibold shadow-lg hover:scale-[1.02] active:scale-[0.98] focus:outline-none focus:ring-4 ring-white/20 transition-transform whitespace-nowrap flex-shrink-0"
+                  className="yes-btn relative z-10 flex items-center justify-center rounded-full w-35 h-10  sm:w-36  xs:h-11 text-xs xs:text-sm lg:h-15 lg:text-lg lg:w-50 sm:text-sm bg-white text-gray-900 font-semibold shadow-lg hover:scale-[1.02] active:scale-[0.98] focus:outline-none focus:ring-4 ring-white/20 transition-transform whitespace-nowrap flex-shrink-0"
                 >
                   Yes, let's talk
                 </button>
@@ -348,7 +348,7 @@ export default function App() {
                 <button
                   ref={noBtnRef}
                   onClick={(e) => e.preventDefault()}
-                  className="no-btn relative flex items-center justify-center w-32 sm:w-36 h-10 xs:h-11 rounded-full border border-white/10 text-white text-xs xs:text-sm font-medium bg-transparent backdrop-blur-sm hover:cursor-pointer active:cursor-pointer shadow-md z-0 touch-manipulation flex-shrink-0"
+                  className="no-btn relative lg:h-15 lg:text-lg lg:w-50 flex items-center  justify-center w-35 sm:w-36 h-10 xs:h-11 rounded-full border border-white/10 text-white text-xs xs:text-sm font-medium bg-transparent backdrop-blur-sm hover:cursor-pointer active:cursor-pointer shadow-md z-0 touch-manipulation flex-shrink-0"
                 >
                   No
                 </button>
