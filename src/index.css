@@ -1,1 +1,21 @@
 @import "tailwindcss";
+
+@font-face {
+  font-family: "Neue Montreal";
+  src: url("/public/NeueMontreal-Regular.ttf") format("truetype");
+}
+@font-face {
+  font-family: "Founders Grotesk";
+  src: url("/public/FoundersGrotesk-Regular.ttf") format("truetype");
+}
+
+@font-face {
+  font-family: "hbue";
+  src: url("/public/hbue.woff2") format("woff2");
+}
+
+@theme {
+  --font-neue: "Neue Montreal", sans-serif;
+  --font-founders: "Founders Grotesk", sans-serif;
+  --font-hbue: "hbue", sans-serif;
+}
